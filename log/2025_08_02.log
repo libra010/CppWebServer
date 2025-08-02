@@ -1,0 +1,8 @@
+2025-08-02 08:17:22.196611 [info] : ========== Server init ==========
+2025-08-02 08:17:22.196622 [info] : Port:3000, OpenLinger: false
+2025-08-02 08:17:22.196626 [info] : LogSys level: 1
+2025-08-02 08:17:22.196628 [info] : srcDir: /home/vsuser/learncode/cppserver-apple/resources/
+2025-08-02 08:17:22.196631 [info] : SqlConnPool num: 12, ThreadPool num: 6
+2025-08-02 08:17:28.289870 [info] : Client[5](192.168.202.1:51169) in, userCount:1
+2025-08-02 08:17:28.290651 [info] : Client[6](192.168.202.1:51425) in, userCount:2
+2025-08-02 08:17:53.216875 [info] : Client[7](192.168.202.1:55009) in, userCount:3
