@@ -1,0 +1,19 @@
+# 构建目录
+/build/
+
+# 可执行文件输出目录（如果你用 ../bin）
+/bin/
+
+# CMake 生成文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# 编译器生成的文件
+*.o
+*.a
+*.so
+*.dylib
+*.exe
