@@ -1,3 +1,6 @@
+
+# 注意：在build文件夹下面执行 cmake .. 命令，否则会在代码目录生成很多垃圾文件
+
 cmake_minimum_required(VERSION 3.10)
 project(CppWebServer)
 
