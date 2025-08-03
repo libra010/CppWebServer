@@ -19,14 +19,15 @@ class WebServer
 {
 public:
     WebServer(
-        int port, // 端口
-        int timeoutMS, // 超时事件
+        int port,        // 端口
+        int timeoutMS,   // 超时事件
         int connPoolNum, // 连接池数量
-        int threadNum, // 线程池数量
-        bool openLog, // 日志开关
-        int logLevel, // 日志等级
-        int logQueSize // 日志异步队列容量
-    );
+        int threadNum,   // 线程池数量
+        bool openLog,    // 日志开关
+        int logLevel,    // 日志等级
+        int logQueSize,  // 日志异步队列容量
+        const char *srcDir,
+        const char *logDir);
     ~WebServer();
     void Start();
 
@@ -51,7 +52,9 @@ private:
     int timeoutMS_;
     bool isClose_;
     int listenFd_;
-    char* srcDir_;
+    // char* srcDir_;
+    const char *srcDir_;
+    const char *logDir_;
     std::unique_ptr<HeapTimer> timer_;
     std::unique_ptr<ThreadPool> threadpool_;
     std::unordered_map<int, HttpConn> users_;

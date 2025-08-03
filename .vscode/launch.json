@@ -4,7 +4,7 @@
             "name": "运行调试C++服务端",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/server",
+            "program": "${workspaceFolder}/build/bin/server",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

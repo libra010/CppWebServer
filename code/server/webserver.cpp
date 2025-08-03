@@ -8,18 +8,23 @@
 
 using namespace std;
 
-WebServer::WebServer(int port, int timeoutMS, int connPoolNum, int threadNum, bool openLog, int logLevel, int logQueSize)
-    : port_(port), timeoutMS_(timeoutMS), isClose_(false),
+WebServer::WebServer(int port, int timeoutMS, int connPoolNum, int threadNum, bool openLog, int logLevel, int logQueSize,
+                     const char *srcDir, const char *logDir)
+    : port_(port), timeoutMS_(timeoutMS), isClose_(false), srcDir_(srcDir), logDir_(logDir),
       timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum))
 {
-    srcDir_ = getcwd(nullptr, 256);
-    assert(srcDir_);
-    strncat(srcDir_, "/resources/", 16);
+    // srcDir_ = getcwd(nullptr, 256);
+    // assert(srcDir_);
+    // strncat(srcDir_, "/resources/", 16);
+    // HttpConn::userCount = 0;
+    // HttpConn::srcDir = srcDir_;
+
     HttpConn::userCount = 0;
     HttpConn::srcDir = srcDir_;
     if (openLog)
     {
-        Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
+        // Log::Instance()->init(logLevel, "./logs", ".log", logQueSize);
+        Log::Instance()->init(logLevel, logDir, ".log", logQueSize);
         if (isClose_)
         {
             LOG_ERROR("========== Server init error!==========");
@@ -39,7 +44,7 @@ WebServer::~WebServer()
 {
     // close(listenFd_);
     isClose_ = true;
-    free(srcDir_);
+    // free(srcDir_);
 }
 
 void WebServer::Start()

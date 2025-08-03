@@ -4,6 +4,9 @@
 # 可执行文件输出目录（如果你用 ../bin）
 /bin/
 
+# 日志文件
+/logs/
+
 # CMake 生成文件
 CMakeCache.txt
 CMakeFiles/

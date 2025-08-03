@@ -9,7 +9,9 @@ int main(int argc, char *argv[])
     std::cout << "Server started on port " << config.port << std::endl;
 
     WebServer server(config.port, config.timeoutMS, config.connPoolNum,
-                     config.threadNum, config.openLog, config.logLevel, config.logQueSize);
+                     config.threadNum, config.openLog, config.logLevel, config.logQueSize,
+                     "./resources",
+                     "./logs");
     server.Start();
 
     return 0;
