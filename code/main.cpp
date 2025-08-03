@@ -1,19 +1,16 @@
 #include "./server/webserver.h"
+#include "./config/config.h"
 
-using namespace std;
-
-int main()
+int main(int argc, char *argv[])
 {
-    WebServer server(
-        3000,
-        60000,
-        false,
-        12,
-        6,
-        true,
-        1,
-        1024
-    );
+    Config config;
+    config.parse_cmd_arg(argc, argv);
+
+    std::cout << "Server started on port " << config.port << std::endl;
+
+    WebServer server(config.port, config.timeoutMS, config.connPoolNum,
+                     config.threadNum, config.openLog, config.logLevel, config.logQueSize);
     server.Start();
+
     return 0;
 }

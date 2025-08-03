@@ -8,8 +8,8 @@
 
 using namespace std;
 
-WebServer::WebServer(int port, int timeoutMS, bool OptLinger, int connPoolNum, int threadNum, bool openLog, int logLevel, int logQueSize)
-    : port_(port), openLinger_(OptLinger), timeoutMS_(timeoutMS), isClose_(false),
+WebServer::WebServer(int port, int timeoutMS, int connPoolNum, int threadNum, bool openLog, int logLevel, int logQueSize)
+    : port_(port), timeoutMS_(timeoutMS), isClose_(false),
       timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum))
 {
     srcDir_ = getcwd(nullptr, 256);
@@ -27,7 +27,7 @@ WebServer::WebServer(int port, int timeoutMS, bool OptLinger, int connPoolNum, i
         else
         {
             LOG_INFO("========== Server init ==========");
-            LOG_INFO("Port:%d, OpenLinger: %s", port_, OptLinger ? "true" : "false");
+            LOG_INFO("Port:%d", port_);
             LOG_INFO("LogSys level: %d", logLevel);
             LOG_INFO("srcDir: %s", HttpConn::srcDir);
             LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
@@ -68,8 +68,6 @@ void WebServer::Start()
         close(listenfd);
         return;
     }
-
-    std::cout << "Server started on port " << port_ << std::endl;
 
     while (!isClose_)
     {

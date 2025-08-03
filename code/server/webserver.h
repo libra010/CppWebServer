@@ -21,7 +21,6 @@ public:
     WebServer(
         int port, // 端口
         int timeoutMS, // 超时事件
-        bool OptLinger, // 优雅退出
         int connPoolNum, // 连接池数量
         int threadNum, // 线程池数量
         bool openLog, // 日志开关
