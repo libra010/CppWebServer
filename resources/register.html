@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>注册页面</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="icon" href="images/favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- 自定义样式 -->
+  <style>
+    body {
+      padding-top: 20px;
+      background-color: #f8f9fa;
+    }
+
+    .register-container {
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mx-4">
+    <a class="navbar-brand" href="index.html">我的网站</a>
+
+    <!-- 折叠按钮 -->
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- 导航链接 -->
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">首页</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="images.html">图片</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="video.html">视频</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="login.html">登录</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="#">注册 <span class="sr-only">(current)</span></a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 注册表单 -->
+  <div class="register-container">
+    <h1>注册</h1>
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="username">用户名</label>
+        <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+      </div>
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+      </div>
+      <button type="submit" class="btn btn-success btn-block">确认注册</button>
+    </form>
+  </div>
+
+  <!-- jQuery 和 Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- 自定义脚本：处理注册按钮点击 -->
+  <script>
+    $(document).ready(function () {
+      $('#registerForm').on('submit', function (event) {
+        event.preventDefault(); // 阻止默认提交
+
+        // 获取输入值
+        const username = $('#username').val();
+        const password = $('#password').val();
+
+        $.ajax({
+          url: '/api/register',
+          type: 'POST',
+          data: {
+            username: username,
+            password: password
+          },
+          success: function (data) {
+            jsondata = JSON.parse(data);
+            if (jsondata.status == '200') {
+              // 打印到控制台
+              console.log('注册 - 用户名:', username);
+              console.log('注册 - 密码:', password);
+
+              // 提示注册成功并跳转到 login.html
+              alert('注册成功！即将跳转到登录页面...');
+              setTimeout(function () {
+                window.location.href = 'login.html';
+              }, 0); // 2秒后跳转
+            }
+            else{
+              alert('注册失败！');
+            }
+          },
+          error: function (xhr, status, error) {
+
+          }
+        });
+
+
+      });
+    });
+  </script>
+
+</body>
+
+</html>
