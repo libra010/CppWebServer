@@ -51,7 +51,22 @@ HttpResponse::~HttpResponse()
     UnmapFile();
 }
 
-void HttpResponse::Init(const string &srcDir, string &path, bool isKeepAlive, int code)
+// void HttpResponse::Init(const string &srcDir, string &path, bool isKeepAlive, int code)
+// {
+//     assert(srcDir != "");
+//     if (mmFile_)
+//     {
+//         UnmapFile();
+//     }
+//     code_ = code;
+//     isKeepAlive_ = isKeepAlive;
+//     path_ = path;
+//     srcDir_ = srcDir;
+//     mmFile_ = nullptr;
+//     mmFileStat_ = {0};
+// }
+
+void HttpResponse::Init(const string &srcDir, string &path, const std::string &retjson, bool isKeepAlive, int code)
 {
     assert(srcDir != "");
     if (mmFile_)
@@ -64,10 +79,13 @@ void HttpResponse::Init(const string &srcDir, string &path, bool isKeepAlive, in
     srcDir_ = srcDir;
     mmFile_ = nullptr;
     mmFileStat_ = {0};
+
+    retJson_ = retjson;
 }
 
 void HttpResponse::MakeResponse(Buffer &buff)
 {
+
     /* 判断请求的资源文件 */
     if (stat((srcDir_ + path_).data(), &mmFileStat_) < 0 || S_ISDIR(mmFileStat_.st_mode))
     {
@@ -84,6 +102,15 @@ void HttpResponse::MakeResponse(Buffer &buff)
     ErrorHtml_();
     AddStateLine_(buff);
     AddHeader_(buff);
+    
+    if(!retJson_.empty()){
+        buff.Append("Content-Type: application/json; charset=utf-8\r\n");
+        buff.Append("Content-length: " + to_string(retJson_.size()) + "\r\n");
+        buff.Append("\r\n");  
+        buff.Append(retJson_);
+        return;
+    }
+
     AddContent_(buff);
 }
 

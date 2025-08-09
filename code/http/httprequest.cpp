@@ -1,6 +1,11 @@
 #include "httprequest.h"
 using namespace std;
 
+const unordered_map<string, string> HttpRequest::DEFAULT_POST_TAG{
+    {"/api/register", "1"},
+    {"/api/login", "2"},
+};
+
 const unordered_set<string> HttpRequest::DEFAULT_HTML{
     "/index",
     "/register",
@@ -37,9 +42,11 @@ bool HttpRequest::parse(Buffer &buff)
 {
     const char CRLF[] = "\r\n"; // 行结束符标志
     if (buff.ReadableBytes() <= 0)
-    {   // 没有可读的字节
+    { // 没有可读的字节
         return false;
     }
+    // 复用连接要清除上次的json数据
+    retjson_ = "";
     // 读取数据
     while (buff.ReadableBytes() && state_ != FINISH)
     {
@@ -75,6 +82,13 @@ bool HttpRequest::parse(Buffer &buff)
         }
         buff.RetrieveUntil(lineEnd + 2); // 跳过回车换行
     }
+    /**
+     * 因为HttpBody没有回车换行符，所以上述方法无法正确移动读指针。
+     * 正确的操作应该是读取Content-Length数据来判断HttpBody的数据长度。
+     * 这里直接解析Http完成之后清空缓冲区，但是可能有粘包的问题。
+     * 但是有时候能正常，可能是因为作为新的连接新建了缓冲区。
+     */
+    buff.RetrieveAll();
     LOG_DEBUG("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
     return true;
 }
@@ -110,6 +124,19 @@ bool HttpRequest::ParseRequestLine_(const string &line)
         path_ = subMatch[2];
         version_ = subMatch[3];
         state_ = HEADERS; // 状态转换为下一个状态
+
+        // size_t pos = path_.find('?');
+        // if (pos != std::string::npos)
+        // {
+        //     path_ = path_.substr(0, pos);   // 路径部分
+        //     query_ = path_.substr(pos + 1); // 查询字符串（去掉 ?）
+        // }
+        // else
+        // {
+        //     path_ = path_;
+        //     query_ = ""; // 没有查询字符串
+        // }
+
         return true;
     }
     LOG_ERROR("RequestLine Error");
@@ -153,28 +180,132 @@ int HttpRequest::ConverHex(char ch)
 // 处理Post请求
 void HttpRequest::ParsePost_()
 {
-    if (method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded")
+    if (method_ == "POST" &&
+        (header_["Content-Type"] == "application/x-www-form-urlencoded" || header_["Content-Type"] == "application/x-www-form-urlencoded; charset=UTF-8"))
     {
         ParseFromUrlencoded_();
-        if (DEFAULT_HTML_TAG.count(path_))
-        {
-            int tag = DEFAULT_HTML_TAG.find(path_)->second;
-            LOG_DEBUG("Tag:%d", tag);
-            if (tag == 0 || tag == 1)
-            {
-                path_ = "/error.html";
 
-                // bool isLogin = (tag == 1);
-                // if (UserVerify(post_["username"], post_["password"], isLogin))
-                // {
-                //     path_ = "/welcome.html";
-                // }
-                // else
-                // {
-                //     path_ = "/error.html";
-                // }
+        // if (DEFAULT_HTML_TAG.count(path_))
+        // {
+        //     int tag = DEFAULT_HTML_TAG.find(path_)->second;
+        //     LOG_DEBUG("Tag:%d", tag);
+        //     if (tag == 0 || tag == 1)
+        //     {
+        //         path_ = "/error.html";
+
+        //         bool isLogin = (tag == 1);
+        //         if (UserVerify(post_["username"], post_["password"], isLogin))
+        //         {
+        //             path_ = "/welcome.html";
+        //         }
+        //         else
+        //         {
+        //             path_ = "/error.html";
+        //         }
+        //     }
+        // }
+
+        ProcessCGI_();
+        path_ = "/welcome.html";
+    }
+}
+
+void HttpRequest::ProcessCGI_()
+{
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+    {
+        LOG_ERROR("pipe() error:%d", 4);
+    }
+
+    string authtype = DEFAULT_POST_TAG.find(path_)->second;
+
+    // 创建子进程
+    pid_t pid = fork();
+
+    /**
+     * 创建子进程后，父进程继续执行，子进程会从下面的语句开始执行。两个程序都从fork的下一行开始执行
+     * 如果pid为0，标识子进程，通常用execl函数执行一个新的程序替换到子进程
+     * 新的程序如果成功执行就不会执行子进程接下来的语句了，如果执行失败，继续执行下面的语句，然后通常子进程通过exit退出自身
+     */
+
+    if (pid == 0) // 子进程
+    {
+
+        close(pipefd[0]); // 关闭读端
+        // 将标准输出重定向到管道写端
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]); // dup2 后可以关闭原 fd
+
+        /**
+         * 子进程通过管道和父进程通信，定义了一个管道，
+         * 父子进程各有一个副本，子进程关闭读管道并将标准输出重定向到管道写端，父进程关闭写管道并通过read监听
+         * 子进程如果一直持有管道写端的引用，并且不显式关闭，父进程将一直阻塞在read方法，但可以使用超时机制
+         */
+
+        execl("./resources_cgi/auth", "auth", post_["username"].c_str(), post_["password"].c_str(), authtype.c_str(), NULL);
+
+        LOG_ERROR("execl error:%d", 3);
+        exit(1); // 如果execl失败
+    }
+    else if (pid > 0) // 父进程
+    {
+        close(pipefd[1]); // 关闭写端
+
+        char buffer[1024];
+        std::string output;
+        ssize_t bytesRead;
+
+        // 从管道读取子进程的 stdout
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
+        {
+            buffer[bytesRead] = '\0'; // 添加字符串结束符
+            output += buffer;
+        }
+
+        close(pipefd[0]); // 关闭读端
+
+        // 等待子进程结束
+        int status;
+        waitpid(pid, &status, 0);
+
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+        {
+            LOG_DEBUG("CGI programe execute success:%d", output);
+        }
+        else
+        {
+            LOG_ERROR("CGI programe execute error:%d", WEXITSTATUS(status));
+        }
+
+        LOG_INFO("CGI programe output:%s", output);
+
+        if (authtype == "1")
+        {
+            if (output.front() == '1')
+            {
+                retjson_ = R"({"status": "200","msg": "register success"})";
+            }
+            else
+            {
+                retjson_ = R"({"status": "400","msg": "register failure"})";
             }
         }
+        if (authtype == "2")
+        {
+            if (output.front() == '1')
+            {
+                retjson_ = R"({"status": "200","msg": "login success"})";
+            }
+            else
+            {
+                retjson_ = R"({"status": "400","msg": "login failure"})";
+            }
+        }
+    }
+    else
+    {
+        LOG_ERROR("fork() error:%d", 3);
     }
 }
 
@@ -287,6 +418,11 @@ void HttpRequest::ParseFromUrlencoded_()
 //     LOG_DEBUG( "UserVerify success!!");
 //     return flag;
 // }
+
+std::string &HttpRequest::retjson()
+{
+    return retjson_;
+}
 
 std::string HttpRequest::path() const
 {

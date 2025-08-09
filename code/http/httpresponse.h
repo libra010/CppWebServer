@@ -16,7 +16,8 @@ public:
     HttpResponse();
     ~HttpResponse();
 
-    void Init(const std::string &srcDir, std::string &path, bool isKeepAlive = false, int code = -1);
+    // void Init(const std::string &srcDir, std::string &path, bool isKeepAlive = false, int code = -1);
+    void Init(const std::string &srcDir, std::string &path, const std::string &retjson, bool isKeepAlive = false, int code = -1);
     void MakeResponse(Buffer &buff);
     void UnmapFile();
     char *File();
@@ -37,6 +38,8 @@ private:
 
     std::string path_;
     std::string srcDir_;
+
+    std::string retJson_;
 
     char *mmFile_;
     struct stat mmFileStat_;

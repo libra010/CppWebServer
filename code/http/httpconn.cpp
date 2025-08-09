@@ -121,11 +121,11 @@ bool HttpConn::process()
     else if (request_.parse(readBuff_)) // 解析成功
     {
         LOG_DEBUG("%s", request_.path().c_str());
-        response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
+        response_.Init(srcDir, request_.path(), request_.retjson(), request_.IsKeepAlive(), 200);
     }
     else
     {
-        response_.Init(srcDir, request_.path(), false, 400);
+        response_.Init(srcDir, request_.path(), "",false, 400);
     }
 
     // 生成响应报文放入writeBuff_中

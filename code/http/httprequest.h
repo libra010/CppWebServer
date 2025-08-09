@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <mysql/mysql.h> //mysql
 
+#include <sys/wait.h>
+
 #include "../buffer/buffer.h"
 #include "../log/log.h"
 
@@ -47,6 +49,8 @@ public:
     std::string GetPost(const std::string &key) const;
     std::string GetPost(const char *key) const;
 
+    std::string &retjson();
+
     bool IsKeepAlive() const;
 
     /*
@@ -64,15 +68,20 @@ private:
     void ParsePost_(); // 处理Post事件
     void ParseFromUrlencoded_(); // 从url中解析编码
 
+    void ProcessCGI_(); // 执行CGI程序
+
     // static bool UserVerify(const std::string &name, const std::string &pwd, bool isLogin);
 
+    std::string retjson_;
+
     PARSE_STATE state_;
-    std::string method_, path_, version_, body_;
+    std::string method_, path_, query_,version_, body_;
     std::unordered_map<std::string, std::string> header_;
     std::unordered_map<std::string, std::string> post_;
 
     static const std::unordered_set<std::string> DEFAULT_HTML;
     static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
+    static const std::unordered_map<std::string, std::string> DEFAULT_POST_TAG;
     static int ConverHex(char ch); // 16进制转换为10进制
 };
 
