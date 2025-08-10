@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [ "$1" = "clean" ];
+then
+    rm -rf build/
+    rm -rf logs/
+    rm -f usertable.txt
+    exit 0
+fi
+
+echo "未输入操作名, 执行“运行或自动构建”流程..."
+
 # 检查 build/bin/server 程序是否存在
 if [ -f "build/bin/server" ]; then
     echo "发现 build/bin/server, 正在执行..."
@@ -16,11 +26,14 @@ else
         make || { echo "编译失败"; exit 1; }
 
         # 构建cgi文件
-        cd ../cgi_code
-        make || { echo "编译失败"; exit 1; }
+        # cd ../cgi_code
+        # make || { echo "编译失败"; exit 1; }
         
         # 切换工作目录
         cd ../
+
+        mkdir -p resources_cgi
+        g++ -std=c++14 -O2 -Wall -g ./cgi_code/auth.cpp -o ./resources_cgi/auth.cgi
 
         # 构建完成后，再次检查并运行程序
         if [ -f "build/bin/server" ]; then

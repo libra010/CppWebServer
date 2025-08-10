@@ -8,6 +8,9 @@ This is a project named C++ WebServer for Learning.
 ``` bash
 # 方式一: 执行便捷脚本
 sh start_server.sh
+
+# 清理操作
+sh start_server.sh clean
 ```
 ``` bash
 # 方式二: 手动构建
