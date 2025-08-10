@@ -9,9 +9,9 @@ Config::Config()
     openLog = true;
     logLevel = 1;
     logQueSize = 1024;
-    config_file = "";
-    resources_dir = "";
-    logs_dir = "";
+    config_file = "./config.ini";
+    resources_dir = "./resources";
+    logs_dir = "./logs";
 }
 
 Config::~Config()
@@ -21,17 +21,24 @@ Config::~Config()
 void Config::parse_cmd_arg(int argc, char *argv[])
 {
     // 第一步：先从命令行中提取 -c 或 --config 指定的配置文件路径
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i)
+    {
         std::string arg = argv[i];
-        if (arg == "-c" || arg == "--config") {
-            if (i + 1 < argc) {
+        if (arg == "-c" || arg == "--config")
+        {
+            if (i + 1 < argc)
+            {
                 config_file = argv[++i];
-            } else {
+            }
+            else
+            {
                 std::cerr << "Error: --config requires a file path." << std::endl;
                 print_usage(argv[0]);
                 exit(1);
             }
-        } else if (arg == "-h" || arg == "--help") {
+        }
+        else if (arg == "-h" || arg == "--help")
+        {
             print_usage(argv[0]);
             exit(0);
         }
@@ -109,7 +116,7 @@ bool Config::check_config() const
 void Config::parse_cmd_args(int argc, char *argv[])
 {
     int opt;
-    const char *str = "p:l:t:";
+    const char *str = "p:l:t:c:";
     while ((opt = getopt(argc, argv, str)) != -1)
     {
         switch (opt)
@@ -127,6 +134,10 @@ void Config::parse_cmd_args(int argc, char *argv[])
         case 't':
         {
             threadNum = atoi(optarg);
+            break;
+        }
+        case 'c':
+        {
             break;
         }
         default:
@@ -148,5 +159,111 @@ void Config::print_usage(const char *progName)
 
 bool Config::load_from_ini()
 {
+    auto config = parse_ini(config_file);
+
+    if (config.count("port"))
+    {
+        auto value = config.find("port")->second;
+        port = std::atoi(value.c_str());
+    }
+
+    if (config.count("timeoutMS"))
+    {
+        auto value = config.find("timeoutMS")->second;
+        timeoutMS = std::atoi(value.c_str());
+    }
+
+    if (config.count("threadNum"))
+    {
+        auto value = config.find("threadNum")->second;
+        threadNum = std::atoi(value.c_str());
+    }
+
+    if (config.count("logLevel"))
+    {
+        auto value = config.find("logLevel")->second;
+        logLevel = std::atoi(value.c_str());
+    }
+
+    if (config.count("logQueSize"))
+    {
+        auto value = config.find("logQueSize")->second;
+        logQueSize = std::atoi(value.c_str());
+    }
+
+    if (config.count("resources_dir"))
+    {
+        resources_dir = config.find("resources_dir")->second;
+    }
+
+    if (config.count("logs_dir"))
+    {
+        logs_dir = config.find("logs_dir")->second;
+    }
+
+    // for (const auto& [key, value] : config) {
+    //     std::cout << key << " = " << value << std::endl;
+    // }
+
     return false;
+}
+
+std::string trim(const std::string &str)
+{
+    size_t start = str.find_first_not_of(" \t");
+    size_t end = str.find_last_not_of(" \t");
+    if (start == std::string::npos)
+        return ""; // 全是空白
+    return str.substr(start, end - start + 1);
+}
+
+std::unordered_map<std::string, std::string> Config::parse_ini(const std::string &filename)
+{
+    std::ifstream infile(filename);
+    std::unordered_map<std::string, std::string> config;
+    std::string line;
+
+    if (!infile.is_open())
+    {
+        std::cerr << "Error: Failed to open Config file." << std::endl;
+        return config;
+    }
+
+    if (!std::getline(infile, line))
+    {
+        std::cerr << "Error: File is empty." << std::endl;
+        return config;
+    }
+
+    // 检查第一行是否为 [server]
+    std::string trimmed_line = trim(line);
+    if (trimmed_line != "[server]")
+    {
+        std::cerr << "Error: First line must be '[server]', found: '" << trimmed_line << "'" << std::endl;
+        return config;
+    }
+
+    while (std::getline(infile, line))
+    {
+        trimmed_line = trim(line);
+        // 跳过空行和注释行
+        if (trimmed_line.empty() || trimmed_line[0] == '#')
+        {
+            continue;
+        }
+        // 查找等号
+        size_t separator = trimmed_line.find('=');
+        if (separator != std::string::npos)
+        {
+            std::string key = trim(trimmed_line.substr(0, separator));
+            std::string value = trim(trimmed_line.substr(separator + 1));
+
+            if (!key.empty() && !value.empty())
+            {
+                config[key] = value;
+            }
+        }
+    }
+
+    return config;
 }

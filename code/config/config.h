@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
+#include <unordered_map>
+#include <fstream>
 
 class Config
 {
@@ -47,6 +49,8 @@ private:
     void parse_cmd_args(int argc, char *argv[]);
 
     void print_usage(const char* progName);
+
+    std::unordered_map<std::string, std::string> parse_ini(const std::string& filename);
 };
 
 #endif // CONFIG_H

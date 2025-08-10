@@ -21,5 +21,9 @@ cd ..
 ```
 
 # TODO List
-配置文件，main方法内部读取配置文件并提供默认值
 
+[x] Config INI File Support
+
+[x] CGI Support
+
+[ ] Write Unit Tests
