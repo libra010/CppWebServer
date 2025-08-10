@@ -61,7 +61,7 @@ bool registerUser(const std::string& filename, const std::string& username, cons
 void login(const std::string& filename, const std::string& username, const std::string& password) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cout << "0" << std::endl; // 文件不存在，登录失败
+        std::cout << R"({"status": "405","msg": "login error, file not exist"})" << username << std::endl;
         return;
     }
 
@@ -81,12 +81,17 @@ void login(const std::string& filename, const std::string& username, const std::
 
     // 验证
     if (users.find(username) != users.end() && users[username] == password) {
-        std::cout << "1" << std::endl; // 登录成功
+        std::cout << R"({"status": "200","msg": "login success"})" << std::endl;
     } else {
-        std::cout << "0" << std::endl; // 登录失败
+        std::cout << R"({"status": "406","msg": "login error"})" << std::endl;
     }
 }
 
+/**
+ * 一个简单的注册登录CGI程序
+ * 使用文本文件作为数据库
+ * TODO: 对文件读写进行加锁
+ */
 int main(int argc, char *argv[]) {
 
     std::string username = argv[1];
@@ -102,40 +107,32 @@ int main(int argc, char *argv[]) {
     // 确保文件存在
     if (!fileExists(USER_TABLE_FILE)) {
         if (!createEmptyFile(USER_TABLE_FILE)) {
-            // std::cerr << "无法创建用户文件: " << USER_TABLE_FILE << std::endl;
-            std::cout << "0 cant create user: " << USER_TABLE_FILE << std::endl;
+            std::cout << R"({"status": "401","msg": "cant create user file"})" << std::endl;
             return 1;
         }
-        // std::cout << "已创建用户文件: " << USER_TABLE_FILE << std::endl;
     }
 
     if (std::strcmp(authStr, "1") == 0) {
         // 注册
-        // std::cout << "注册用户: " << username << std::endl;
-
         if (isUsernameTaken(USER_TABLE_FILE, username)) {
-            // std::cerr << "注册失败: 用户名 '" << username << "' 已存在。" << std::endl;
-            std::cout << "0 register failture user exist: " << username << std::endl;
+            std::cout << R"({"status": "402","msg": "register failure, user existed"})" << std::endl;
             return 1;
         }
 
         if (registerUser(USER_TABLE_FILE, username, password)) {
-            // std::cout << "注册成功!" << std::endl;
-            std::cout << "1 register success" << std::endl;
+            std::cout << R"({"status": "200","msg": "register success"})" << std::endl;
             return 0;
         } else {
-            return 1;
+            std::cout << R"({"status": "403","msg": "register failure"})" << std::endl;
         }
 
     } else if (std::strcmp(authStr, "2") == 0) {
         // 登录
         login(USER_TABLE_FILE, username, password);
-        std::cout << "1 login success" << std::endl;
+        
         return 0; // 登录逻辑输出 1/0，返回 0 表示程序执行成功
-
     } else {
-        std::cout << "0 invalid authtype: " << authStr << std::endl;
-        // std::cerr << "无效的 authtype: " << authStr << "。使用 1 (注册) 或 2 (登录)。" << std::endl;
+        std::cout << R"({"status": "404","msg": "invalid authtype"})" << std::endl;
         return 1;
     }
 

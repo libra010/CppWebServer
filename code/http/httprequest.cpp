@@ -218,8 +218,6 @@ void HttpRequest::ProcessCGI_()
         LOG_ERROR("pipe() error:%d", 4);
     }
 
-    string authtype = DEFAULT_POST_TAG.find(path_)->second;
-
     // 创建子进程
     pid_t pid = fork();
 
@@ -243,10 +241,14 @@ void HttpRequest::ProcessCGI_()
          * 子进程如果一直持有管道写端的引用，并且不显式关闭，父进程将一直阻塞在read方法，但可以使用超时机制
          */
 
-        execl("./resources_cgi/auth", "auth", post_["username"].c_str(), post_["password"].c_str(), authtype.c_str(), NULL);
+        string authtype = DEFAULT_POST_TAG.find(path_)->second;
 
-        LOG_ERROR("execl error:%d", 3);
-        exit(1); // 如果execl失败
+        execl("./resources_cgi/auth.cgi", "auth", post_["username"].c_str(), post_["password"].c_str(), authtype.c_str(), NULL);
+
+        std::cout << R"({"status": "409","msg": "cgi run error"})" << std::endl;
+        
+        // exit(1); // 如果execl失败
+        _exit(1); // execl会执行进程的清理工作 _exit直接系统调用关闭进程
     }
     else if (pid > 0) // 父进程
     {
@@ -271,37 +273,14 @@ void HttpRequest::ProcessCGI_()
 
         if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
         {
-            LOG_DEBUG("CGI programe execute success:%d", output);
+            LOG_DEBUG("CGI programe execute success:%s", output);
         }
         else
         {
             LOG_ERROR("CGI programe execute error:%d", WEXITSTATUS(status));
         }
 
-        LOG_INFO("CGI programe output:%s", output);
-
-        if (authtype == "1")
-        {
-            if (output.front() == '1')
-            {
-                retjson_ = R"({"status": "200","msg": "register success"})";
-            }
-            else
-            {
-                retjson_ = R"({"status": "400","msg": "register failure"})";
-            }
-        }
-        if (authtype == "2")
-        {
-            if (output.front() == '1')
-            {
-                retjson_ = R"({"status": "200","msg": "login success"})";
-            }
-            else
-            {
-                retjson_ = R"({"status": "400","msg": "login failure"})";
-            }
-        }
+        retjson_ = output;
     }
     else
     {
